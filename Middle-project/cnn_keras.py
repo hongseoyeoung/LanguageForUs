@@ -70,7 +70,7 @@ def train():
 	model.fit(train_images, train_labels, validation_data=(val_images, val_labels), epochs=20, batch_size=500, callbacks=callbacks_list)
 	scores = model.evaluate(val_images, val_labels, verbose=0)
 	print("CNN Error: %.2f%%" % (100-scores[1]*100))
-	#model.save('cnn_model_keras2.h5')
+        #model.save('cnn_model_keras2.h5')
 
 train()
 K.clear_session();

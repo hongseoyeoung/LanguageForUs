@@ -13,7 +13,7 @@ prediction = None
 model = load_model('cnn_model_keras2.h5')
 
 def get_image_size():
-	img = cv2.imread('gestures/0/100.jpg', 0)
+	img = cv2.imread('gestures/1/100.jpg', 0)
 	return img.shape
 
 image_x, image_y = get_image_size()
