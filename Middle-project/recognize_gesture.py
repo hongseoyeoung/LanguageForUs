@@ -5,6 +5,7 @@ from cnn_tf import cnn_model_fn
 import os
 import sqlite3
 from keras.models import load_model
+import time
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.logging.set_verbosity(tf.logging.ERROR)
@@ -76,7 +77,7 @@ def split_sentence(text, num_of_words):
 def put_splitted_text_in_blackboard(blackboard, splitted_text):
 	y = 200
 	for text in splitted_text:
-		cv2.putText(blackboard, text, (4, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (255, 255, 255))
+		cv2.putText(blackboard, text, (4, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255))
 		y += 50
 
 def get_hand_hist():
@@ -91,6 +92,9 @@ def recognize():
 		cam = cv2.VideoCapture(0)
 	hist = get_hand_hist()
 	x, y, w, h = 300, 100, 300, 300
+	cur_text = ""
+	count = 0
+	count1 = 0
 	while True:
 		text = ""
 		img = cam.read()[1]
@@ -124,7 +128,21 @@ def recognize():
 				
 				if pred_probab*100 > 80:
 					text = get_pred_text_from_db(pred_class)
-					print(text)
+
+		if cur_text == '':
+			cur_text = text
+		elif cur_text != text:
+			count1 = count1 + 1
+			if count1 == 3:
+				cur_text = ''
+				count1 = 0
+		elif cur_text == text:
+			count = count + 1
+			if count == 6:
+				print(cur_text)
+				count = 0
+				cur_text == ''
+			
 		blackboard = np.zeros((480, 640, 3), dtype=np.uint8)
 		splitted_text = split_sentence(text, 2)
 		put_splitted_text_in_blackboard(blackboard, splitted_text)
