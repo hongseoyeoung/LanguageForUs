@@ -6,6 +6,7 @@ import os
 import sqlite3
 from keras.models import load_model
 import time
+from PIL import ImageFont, ImageDraw, Image
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.logging.set_verbosity(tf.logging.ERROR)
@@ -75,10 +76,17 @@ def split_sentence(text, num_of_words):
 	return splitted_sentence
 
 def put_splitted_text_in_blackboard(blackboard, splitted_text):
-	y = 200
+	y = 0
+	img1 = np.zeros((200,400,3),np.uint8)
 	for text in splitted_text:
-		cv2.putText(blackboard, text, (4, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255))
-		y += 50
+		#cv2.putText(blackboard, text, (4, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255))
+		font = ImageFont.truetype("font.ttf", 32)
+		img_pil = Image.fromarray(img1)
+		draw = ImageDraw.Draw(img_pil)
+		draw.text((0, y),  text,(255, 255, 255), font=font)
+		img1 = np.array(img_pil)
+		cv2.imshow("res", img1)
+		y += 30
 
 def get_hand_hist():
 	with open("hist", "rb") as f:
@@ -92,9 +100,11 @@ def recognize():
 		cam = cv2.VideoCapture(0)
 	hist = get_hand_hist()
 	x, y, w, h = 300, 100, 300, 300
-	cur_text = ""
-	count = 0
-	count1 = 0
+	cur_text = ""   #현재 인식된 텍스트
+	keep_count = 0  #인식 유지 카운트  
+	diff_count = 0  #다른 동작 인식 카운트
+	display_count = 0   #화면 출력 유지 카운트
+	display_sentence = []
 	while True:
 		text = ""
 		img = cam.read()[1]
@@ -129,23 +139,31 @@ def recognize():
 				if pred_probab*100 > 80:
 					text = get_pred_text_from_db(pred_class)
 
-		if cur_text == '':
-			cur_text = text
-		elif cur_text != text:
-			count1 = count1 + 1
-			if count1 == 3:
-				cur_text = ''
-				count1 = 0
-		elif cur_text == text:
-			count = count + 1
-			if count == 6:
-				print(cur_text)
-				count = 0
-				cur_text == ''
-			
 		blackboard = np.zeros((480, 640, 3), dtype=np.uint8)
-		splitted_text = split_sentence(text, 2)
-		put_splitted_text_in_blackboard(blackboard, splitted_text)
+		
+		if cur_text == '':
+    			cur_text = text
+		elif cur_text != text:
+			diff_count += 1
+			if diff_count == 10:
+				cur_text = ''
+				diff_count = 0
+				keep_count = 0
+		elif cur_text == text:
+			keep_count += 1
+			if keep_count == 10:
+				print(cur_text)
+				splitted_text = split_sentence(text, 2)
+				if not display_sentence or display_sentence[-1] != cur_text:
+    					display_sentence.append(cur_text)
+				if len(display_sentence) > 3:
+    					del display_sentence[0]
+				put_splitted_text_in_blackboard(blackboard, display_sentence)
+				keep_count = 0
+				diff_count = 0
+				cur_text == ''
+
+		#put_splitted_text_in_blackboard(blackboard, splitted_text)
 		#cv2.putText(blackboard, text, (30, 200), cv2.FONT_HERSHEY_TRIPLEX, 1.3, (255, 255, 255))
 		cv2.rectangle(img, (x,y), (x+w, y+h), (0,255,0), 2)
 		res = np.hstack((img, blackboard))
