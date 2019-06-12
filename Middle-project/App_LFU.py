@@ -24,11 +24,23 @@ class MyWindow(QMainWindow):
 
     #손인식 버튼 클릭시
     def btn1_clicked(self):
-        subprocess.call(['python set_hand_hist.py'], shell=True)
+
+        #window
+        tmp = subprocess.Popen("set_hand_hist.py", shell=True)
+        tmp.communicate()
+
+        #mac
+       # subprocess.call(['python set_hand_hist.py'], shell=True)
 
     #화면 출력 버튼 클릭시
     def btn2_clicked(self):
-        subprocess.call(['python recognize_gesture.py'], shell=True)
+
+        # window
+        tmp = subprocess.Popen("python recognize_gesture.py", shell=True)
+        tmp.communicate()
+
+        #mac
+       # subprocess.call(['python recognize_gesture.py'], shell=True)
 
     #close 이벤트
     #yes일때 창 종료 No일때 창 종료 무시
